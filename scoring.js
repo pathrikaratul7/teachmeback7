@@ -8,7 +8,9 @@ const conceptChecklists = {
                 keywords: [
                     "memory address",
                     "address of variable",
-                    "memory location"
+                    "memory location",
+                    "location of variable",
+                    "locationnode"
                 ],
                 weight: 20
             },

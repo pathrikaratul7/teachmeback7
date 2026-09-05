@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 
+const { scoreExplanation } = require("./scoring.js");
+
 const app = express();
 
 app.use(cors());
@@ -45,6 +47,24 @@ app.post("/api/posts", (req, res) => {
     });
 });
 
+// Teach Me Back scoring
+app.post("/api/teachback", (req, res) => {
+
+    const { topic, text } = req.body;
+
+    if (!topic || !text) {
+        return res.status(400).json({
+            message: "Topic and explanation are required"
+        });
+    }
+
+    const result = scoreExplanation(topic, text);
+
+    res.json(result);
+});
+
+
+    
 // Start server
 const PORT = 5000;
 

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -67,24 +68,37 @@
 
 <body>
 
+    <!-- Header -->
     <header>
         <h1>TeachWall</h1>
         <p>Ask. Explain. Learn Together.</p>
     </header>
 
+
+    <!-- Main Container -->
     <div class="container">
 
+        <!-- Post Doubt Card -->
         <div class="card">
+
             <h2>Post Your Doubt</h2>
 
-            <textarea placeholder="Write your doubt here..."></textarea>
+            <textarea
+                placeholder="Write your doubt here..."
+            ></textarea>
 
             <br>
 
-            <button class="post-btn">Post Doubt</button>
+            <button class="post-btn">
+                Post Doubt
+            </button>
+
         </div>
 
+
+        <!-- Doubt Wall -->
         <div class="card">
+
             <h2>Doubt Wall</h2>
 
             <h3>What is a constructor in Java?</h3>
@@ -93,27 +107,189 @@
                 Can someone explain constructor in very simple words?
             </p>
 
+<<<<<<< HEAD
             <button class="upvote">👍 Upvote</button>
             <button class="answer-btn">💬 Answer</button>
+=======
+            <button class="upvote">
+                👍 Upvote
+            </button>
+
+            <button>
+                💬 Answer
+            </button>
+
+>>>>>>> 8b2d674 (Connect Teach Me Back scoring)
         </div>
+<!-- Teach Me Back -->
+        <div class="card">
 
+            <h2>Teach Me Back</h2>
+
+            <p>Explain the concept in your own words:</p>
+
+            <input
+                type="text"
+                id="topicInput"
+                placeholder="Enter topic, e.g. Constructor in Java"
+                style="width: 100%; padding: 10px; box-sizing: border-box;"
+            >
+
+            <textarea
+                id="explanationInput"
+                placeholder="Explain the concept in your own words..."
+            ></textarea>
+
+            <button class="post-btn" id="checkExplanation">
+                Check My Explanation
+            </button>
+
+            <div id="scoreResult" style="margin-top: 20px;"></div>
+
+        </div>
     </div>
-<script>
-const textarea = document.querySelector("textarea");
-const postButton = document.querySelector(".post-btn");
-const container = document.querySelector(".container");
 
-postButton.addEventListener("click", function () {
 
-    const doubt = textarea.value.trim();
+    <!-- JavaScript -->
+    <script>
 
-    if (doubt === "") {
-        alert("Please write your doubt first!");
+        // Get HTML elements
+        const textarea = document.querySelector("textarea");
+        const postButton = document.querySelector(".post-btn");
+        const container = document.querySelector(".container");
+
+
+        // When Post Doubt button is clicked
+        postButton.addEventListener("click", function () {
+
+            // Get doubt text
+            const doubt = textarea.value.trim();
+
+
+            // Check if doubt is empty
+            if (doubt === "") {
+
+                alert("Please write your doubt first!");
+
+                return;
+            }
+
+
+            // Send doubt to backend
+            fetch("http://localhost:5000/api/posts", {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+
+                    title: doubt,
+
+                    description: doubt,
+
+                    subject: "General",
+
+                    author: "Student"
+
+                })
+
+            })
+
+
+            // Convert backend response to JSON
+            .then(response => response.json())
+
+
+            // When backend responds
+            .then(data => {
+
+                console.log("Backend response:", data);
+
+
+                // Create new doubt card
+                const newCard = document.createElement("div");
+
+                newCard.className = "card";
+
+
+                // Put doubt inside card
+                newCard.innerHTML = `
+
+                    <h3>${doubt}</h3>
+
+                    <p>
+                        Can someone explain this in very simple words?
+                    </p>
+
+                    <button class="upvote">
+                        👍 Upvote
+                    </button>
+
+                    <button>
+                        💬 Answer
+                    </button>
+
+                `;
+
+
+                // Add new card to page
+                container.appendChild(newCard);
+
+
+                // Clear textarea
+                textarea.value = "";
+
+
+                // Success message
+                alert("Doubt posted successfully!");
+
+            })
+
+
+            // If something goes wrong
+            .catch(error => {
+
+                console.error("Error:", error);
+
+                alert("Something went wrong!");
+
+            });
+
+        });
+
+    
+    // Teach Me Back scoring
+
+const topicInput = document.getElementById("topicInput");
+const explanationInput = document.getElementById("explanationInput");
+const checkExplanation = document.getElementById("checkExplanation");
+const scoreResult = document.getElementById("scoreResult");
+
+checkExplanation.addEventListener("click", function () {
+
+    const topic = topicInput.value.trim();
+    const explanation = explanationInput.value.trim();
+
+    if (topic === "" || explanation === "") {
+        alert("Please enter topic and explanation!");
         return;
     }
 
-    const newCard = document.createElement("div");
-    newCard.className = "card";
+    fetch("http://localhost:5000/api/teachback", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            topic: topic,
+            text: explanation
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
 
     newCard.innerHTML = `
         <h3>${doubt}</h3>
@@ -131,9 +307,19 @@ upvoteButton.addEventListener("click", function () {
     upvoteButton.innerText = "👍 Upvote " + votes;
 });
 
-    textarea.value = "";
+    })
+    .catch(error => {
 
-    alert("Doubt posted successfully!");
+        console.error("Error:", error);
+
+        scoreResult.innerHTML = `
+            <p style="color:red;">
+                Unable to check explanation. Please make sure backend is running.
+            </p>
+        `;
+
+    });
+
 });
 container.addEventListener("click", function (event) {
     if (event.target.classList.contains("answer-btn")) {
@@ -145,7 +331,6 @@ container.addEventListener("click", function (event) {
         submitAnswer.innerText = "Submit Answer";
 
         event.target.parentElement.appendChild(answerBox);
-        event.target.parentElement.appendChild(submitAnswer);
 
         submitAnswer.addEventListener("click", function () {
             const answer = answerBox.value.trim();
@@ -203,4 +388,5 @@ container.addEventListener("click", function (event) {
 </section>
 
 </body>
+
 </html>
