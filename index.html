@@ -94,7 +94,7 @@
             </p>
 
             <button class="upvote">👍 Upvote</button>
-            <button>💬 Answer</button>
+            <button class="answer-btn">💬 Answer</button>
         </div>
 
     </div>
@@ -119,14 +119,48 @@ postButton.addEventListener("click", function () {
         <h3>${doubt}</h3>
         <p>Can someone explain this in very simple words?</p>
         <button class="upvote">👍 Upvote</button>
-        <button>💬 Answer</button>
+        <button class="answer-btn">💬 Answer</button>
     `;
 
     container.appendChild(newCard);
+    const upvoteButton = newCard.querySelector(".upvote");
+let votes = 0;
+
+upvoteButton.addEventListener("click", function () {
+    votes++;
+    upvoteButton.innerText = "👍 Upvote " + votes;
+});
 
     textarea.value = "";
 
     alert("Doubt posted successfully!");
+});
+container.addEventListener("click", function (event) {
+    if (event.target.classList.contains("answer-btn")) {
+
+        const answerBox = document.createElement("textarea");
+        answerBox.placeholder = "Write your answer here...";
+
+        const submitAnswer = document.createElement("button");
+        submitAnswer.innerText = "Submit Answer";
+
+        event.target.parentElement.appendChild(answerBox);
+        event.target.parentElement.appendChild(submitAnswer);
+
+        submitAnswer.addEventListener("click", function () {
+            const answer = answerBox.value.trim();
+
+            if (answer !== "") {
+                const answerText = document.createElement("p");
+                answerText.innerText = "Answer: " + answer;
+
+                event.target.parentElement.appendChild(answerText);
+
+                answerBox.remove();
+                submitAnswer.remove();
+            }
+        });
+    }
 });
 </script>
 </body>
