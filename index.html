@@ -163,5 +163,44 @@ container.addEventListener("click", function (event) {
     }
 });
 </script>
+
+<section id="teach-me-back">
+    <h2>Teach Me Back</h2>
+
+    <label for="topic">Select Topic:</label>
+
+    <select id="topic">
+        <option value="">-- Select a Topic --</option>
+        <option value="data-structures">Data Structures</option>
+        <option value="ai">Artificial Intelligence</option>
+        <option value="oops">Object Oriented Programming</option>
+        <option value="dbms">DBMS</option>
+    </select>
+
+    <br><br>
+
+    <label for="explanation">Explain the topic in your own words:</label>
+
+    <br>
+
+    <textarea id="explanation"
+              rows="8"
+              cols="50"
+              placeholder="Write your explanation here..."></textarea>
+
+    <br><br>
+
+    <button onclick="submitExplanation()">Submit</button>
+
+    <div id="result" style="display:none;">
+        <h3>Result</h3>
+        <p id="score"></p>
+
+        <h3>Feedback</h3>
+        <p id="feedback"></p>
+    </div>
+
+</section>
+
 </body>
 </html>
