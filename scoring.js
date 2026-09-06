@@ -199,16 +199,6 @@ function scoreExplanation(topic, text) {
 }
 
 
-// Test explanation
-const example = `
-A pointer stores the memory address of another variable.
-The & operator gets the address and dereferencing the pointer
-allows us to access the value stored at that address.
-`;
-
-console.log(scoreExplanation("pointers", example));
-
-
 // Export for backend
 module.exports = {
     scoreExplanation

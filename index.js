@@ -7,6 +7,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname));
 
 // Temporary posts storage
 let posts = [];
@@ -63,11 +64,41 @@ app.post("/api/teachback", (req, res) => {
     res.json(result);
 });
 
+// Proxy explanation checks through the backend to avoid browser CORS errors.
+app.post("/api/chat", async (req, res) => {
+    const message = req.body?.message;
+
+    if (typeof message !== "string" || !message.trim()) {
+        return res.status(400).json({
+            message: "A non-empty message is required"
+        });
+    }
+
+    try {
+        const response = await fetch("https://thekartik7.runasp.net/api/Chat", {
+            method: "POST",
+            headers: {
+                "accept": "text/plain",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: `${message}\nValidate this Answer.`
+            })
+        });
+
+        const responseBody = await response.text();
+        res.status(response.status).type(response.headers.get("content-type") || "text/plain").send(responseBody);
+    } catch (error) {
+        console.error("Chat API proxy error:", error);
+        res.status(502).json({ message: "Unable to reach the explanation service." });
+    }
+});
+
 
     
 // Start server
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
