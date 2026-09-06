@@ -107,19 +107,8 @@
                 Can someone explain constructor in very simple words?
             </p>
 
-<<<<<<< HEAD
             <button class="upvote">👍 Upvote</button>
             <button class="answer-btn">💬 Answer</button>
-=======
-            <button class="upvote">
-                👍 Upvote
-            </button>
-
-            <button>
-                💬 Answer
-            </button>
-
->>>>>>> 8b2d674 (Connect Teach Me Back scoring)
         </div>
 <!-- Teach Me Back -->
         <div class="card">
@@ -290,22 +279,18 @@ checkExplanation.addEventListener("click", function () {
     })
     .then(response => response.json())
     .then(data => {
+        scoreResult.innerHTML = `
+    <h3>Result</h3>
+    <p><strong>Score:</strong> ${data.score}</p>
+    <p><strong>Level:</strong> ${data.level}</p>
+    <p><strong>Feedback:</strong> ${data.feedback}</p>
+`;
 
-    newCard.innerHTML = `
-        <h3>${doubt}</h3>
-        <p>Can someone explain this in very simple words?</p>
-        <button class="upvote">👍 Upvote</button>
-        <button class="answer-btn">💬 Answer</button>
-    `;
+    
+        
+    
 
-    container.appendChild(newCard);
-    const upvoteButton = newCard.querySelector(".upvote");
-let votes = 0;
-
-upvoteButton.addEventListener("click", function () {
-    votes++;
-    upvoteButton.innerText = "👍 Upvote " + votes;
-});
+    
 
     })
     .catch(error => {
@@ -349,43 +334,8 @@ container.addEventListener("click", function (event) {
 });
 </script>
 
-<section id="teach-me-back">
-    <h2>Teach Me Back</h2>
 
-    <label for="topic">Select Topic:</label>
 
-    <select id="topic">
-        <option value="">-- Select a Topic --</option>
-        <option value="data-structures">Data Structures</option>
-        <option value="ai">Artificial Intelligence</option>
-        <option value="oops">Object Oriented Programming</option>
-        <option value="dbms">DBMS</option>
-    </select>
-
-    <br><br>
-
-    <label for="explanation">Explain the topic in your own words:</label>
-
-    <br>
-
-    <textarea id="explanation"
-              rows="8"
-              cols="50"
-              placeholder="Write your explanation here..."></textarea>
-
-    <br><br>
-
-    <button onclick="submitExplanation()">Submit</button>
-
-    <div id="result" style="display:none;">
-        <h3>Result</h3>
-        <p id="score"></p>
-
-        <h3>Feedback</h3>
-        <p id="feedback"></p>
-    </div>
-
-</section>
 
 </body>
 

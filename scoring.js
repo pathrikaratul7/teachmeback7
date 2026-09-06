@@ -72,7 +72,33 @@ const conceptChecklists = {
                     "Dereferencing is used to access the value stored at the address."
             }
         ]
-    }
+    },
+    arrays: {
+        concepts: [
+            {
+                name: "Array",
+                keywords: ["array", "collection of elements", "multiple values"],
+                weight: 25
+            },
+            {
+                name: "Index",
+                keywords: ["index", "position", "array index"],
+                weight: 25
+            },
+            {
+                name: "Same Data Type",
+                keywords: ["same data type", "same type"],
+                weight: 25
+            },
+            {
+                name: "Accessing Elements",
+                keywords: ["access element", "access elements", "using index"],
+                weight: 25
+            }
+        ],
+
+        misconceptions: []
+    },
 };
 
 
