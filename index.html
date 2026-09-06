@@ -124,10 +124,17 @@
                 style="width: 100%; padding: 10px; box-sizing: border-box;"
             >
 
-            <textarea
-                id="explanationInput"
-                placeholder="Explain the concept in your own words..."
-            ></textarea>
+          
+    
+    <textarea
+    id="explanationInput"
+    placeholder="Explain the concept in your own words..."
+    onpaste="return false"
+    oncopy="return false"
+    oncut="return false"
+    oncontextmenu="return false"
+    onkeydown="if ((event.ctrlKey || event.metaKey) && ['v','c','x'].includes(event.key.toLowerCase())) event.preventDefault();">
+</textarea>
 
             <button class="post-btn" id="checkExplanation">
                 Check My Explanation
