@@ -539,26 +539,25 @@ const scoreResult = document.getElementById("scoreResult");
     }
 
     async function getScore(topic, explanation) {
-        const response = await fetch(`${API_BASE_URL}/teachback`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                topic: topic,
-                text: explanation
-            })
-        });
+    const response = await fetch(`${API_BASE_URL}/teachback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic, text: explanation })
+    });
 
-        if (!response.ok) {
-            throw new Error(`Score error: ${response.status}`);
-        }
-
-        const score = await response.json();
-
-        return typeof score.score === "number" ? score : null;
+    if (!response.ok) {
+        throw new Error(`Score error: ${response.status}`);
     }
 
+    const score = await response.json();
+    console.log("TeachBack raw response:", score); // temporary — check real field names in devtools
+
+    const hasScore =
+        typeof score.score === "number" ||
+        typeof score.scoreOutOf10 === "number";
+
+    return hasScore ? score : null;
+}
     function renderTeachBackResult(score, chatText = "") {
         const scoreMarkup = score
             ? (() => {
