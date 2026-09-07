@@ -146,6 +146,7 @@
     <header>
         <h1>TeachWall</h1>
         <p>Ask. Explain. Learn Together.</p>
+        <p><a href="/answers.html" style="color: white;">Open Answers</a></p>
     </header>
 
 
@@ -171,18 +172,16 @@
 
 
         <!-- Doubt Wall -->
-        <div class="card">
+        <div class="card" id="doubtWall">
 
             <h2>Doubt Wall</h2>
+            <div id="postsList" aria-live="polite">Loading posts...</div>
 
-            <h3>What is a constructor in Java?</h3>
-
-            <p>
-                Can someone explain constructor in very simple words?
-            </p>
-
-            <button class="upvote">👍 Upvote</button>
-            <button class="answer-btn">💬 Answer</button>
+            <hr>
+            <h2>Find a Post</h2>
+            <input id="postLookupId" type="number" min="0" placeholder="Enter post ID">
+            <button id="loadPost" type="button">Load Post</button>
+            <div id="singlePost" aria-live="polite"></div>
         </div>
 <!-- Teach Me Back -->
         <div class="card">
@@ -222,11 +221,169 @@
 
     <!-- JavaScript -->
     <script>
+        const API_BASE_URL = "https://thekartik7.runasp.net/api";
 
         // Get HTML elements
         const textarea = document.querySelector("textarea");
         const postButton = document.querySelector(".post-btn");
         const container = document.querySelector(".container");
+        const postsList = document.getElementById("postsList");
+        const loadPostButton = document.getElementById("loadPost");
+        const singlePost = document.getElementById("singlePost");
+
+        loadPostButton.addEventListener("click", async () => {
+            const postId = Number(document.getElementById("postLookupId").value);
+            if (!Number.isInteger(postId) || postId < 0) {
+                singlePost.textContent = "Enter a valid post ID first.";
+                return;
+            }
+
+            loadPostButton.disabled = true;
+            singlePost.textContent = "Loading post...";
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/posts/${postId}`);
+                const responseText = await response.text();
+                let responseBody;
+                try {
+                    responseBody = JSON.parse(responseText);
+                } catch {
+                    responseBody = responseText;
+                }
+
+                if (!response.ok) {
+                    throw new Error(responseBody.message || `Unable to load the post (HTTP ${response.status}).`);
+                }
+
+                const post = responseBody.post || responseBody;
+                singlePost.textContent = "";
+                const title = document.createElement("h3");
+                title.textContent = post.title || "Untitled post";
+                const description = document.createElement("p");
+                description.textContent = post.description || "";
+                const details = document.createElement("p");
+                details.textContent = `Post ID: ${post.id ?? postId} | Subject: ${post.subject || "General"} | Author: ${post.author || "Anonymous"}`;
+                singlePost.append(title, description, details);
+            } catch (error) {
+                singlePost.textContent = error.message;
+            } finally {
+                loadPostButton.disabled = false;
+            }
+        });
+
+        function renderPosts(data) {
+            const posts = Array.isArray(data)
+                ? data
+                : data.posts || data.items || data.data || [];
+
+            postsList.textContent = "";
+            if (!Array.isArray(posts) || posts.length === 0) {
+                postsList.textContent = "No posts found.";
+                return;
+            }
+
+            posts.forEach(post => {
+                const postItem = document.createElement("article");
+                postItem.className = "post-item";
+
+                const title = document.createElement("h3");
+                title.textContent = post.title || "Untitled post";
+
+                const description = document.createElement("p");
+                description.textContent = post.description || "";
+
+                const details = document.createElement("p");
+                details.textContent = `Post ID: ${post.id ?? "-"} | Subject: ${post.subject || "General"} | Author: ${post.author || "Anonymous"}`;
+
+                const answerButton = document.createElement("button");
+                answerButton.className = "answer-btn";
+                answerButton.textContent = "💬 Answer";
+                answerButton.dataset.postId = post.id ?? "";
+
+                const upvoteButton = document.createElement("button");
+                upvoteButton.className = "upvote post-action";
+                upvoteButton.textContent = `👍 Upvote (${post.upvotes ?? 0})`;
+                upvoteButton.dataset.postId = post.id ?? "";
+
+                const deleteButton = document.createElement("button");
+                deleteButton.className = "delete-post post-action";
+                deleteButton.textContent = "🗑 Delete";
+                deleteButton.dataset.postId = post.id ?? "";
+
+                upvoteButton.addEventListener("click", async () => {
+                    upvoteButton.disabled = true;
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/upvotes`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ postId: Number(post.id) })
+                        });
+
+                        if (!response.ok) {
+                            const errorBody = await response.json().catch(() => ({}));
+                            throw new Error(errorBody.message || `Unable to upvote the post (HTTP ${response.status}).`);
+                        }
+
+                        const currentUpvotes = Number(post.upvotes || 0) + 1;
+                        post.upvotes = currentUpvotes;
+                        upvoteButton.textContent = `👍 Upvote (${currentUpvotes})`;
+                    } catch (error) {
+                        alert(error.message);
+                    } finally {
+                        upvoteButton.disabled = false;
+                    }
+                });
+
+                deleteButton.addEventListener("click", async () => {
+                    if (!confirm(`Delete post ${post.id}?`)) {
+                        return;
+                    }
+
+                    deleteButton.disabled = true;
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/posts/${Number(post.id)}`, {
+                            method: "DELETE"
+                        });
+
+                        if (!response.ok) {
+                            const errorBody = await response.json().catch(() => ({}));
+                            throw new Error(errorBody.message || `Unable to delete the post (HTTP ${response.status}).`);
+                        }
+
+                        postItem.remove();
+                    } catch (error) {
+                        alert(error.message);
+                        deleteButton.disabled = false;
+                    }
+                });
+
+                postItem.append(title, description, details, upvoteButton, answerButton, deleteButton);
+                postsList.appendChild(postItem);
+            });
+        }
+
+        async function loadPosts() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/posts`);
+                const responseText = await response.text();
+                let responseBody;
+                try {
+                    responseBody = JSON.parse(responseText);
+                } catch {
+                    responseBody = responseText;
+                }
+
+                if (!response.ok) {
+                    throw new Error(responseBody.message || `Unable to load posts (HTTP ${response.status}).`);
+                }
+
+                renderPosts(responseBody);
+            } catch (error) {
+                postsList.textContent = error.message;
+            }
+        }
+
+        loadPosts();
 
 
         // When Post Doubt button is clicked
@@ -246,7 +403,7 @@
 
 
             // Send doubt to backend
-            fetch("/api/posts", {
+            fetch(`${API_BASE_URL}/posts`, {
 
                 method: "POST",
 
@@ -269,8 +426,22 @@
             })
 
 
-            // Convert backend response to JSON
-            .then(response => response.json())
+            // Read either JSON or plain-text API responses
+            .then(async response => {
+                const responseText = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch {
+                    data = { message: responseText };
+                }
+
+                if (!response.ok) {
+                    throw new Error(data.message || `Unable to create the post (HTTP ${response.status}).`);
+                }
+
+                return data;
+            })
 
 
             // When backend responds
@@ -298,15 +469,18 @@
                         👍 Upvote
                     </button>
 
-                    <button>
+                    <button class="answer-btn">
                         💬 Answer
                     </button>
 
                 `;
 
 
-                // Add new card to page
-                container.appendChild(newCard);
+                // Add new card to the Doubt Wall
+                if (postsList.textContent === "Loading posts..." || postsList.textContent === "No posts found.") {
+                    postsList.textContent = "";
+                }
+                postsList.prepend(newCard);
 
 
                 // Clear textarea
@@ -365,7 +539,7 @@ const scoreResult = document.getElementById("scoreResult");
     }
 
     async function getScore(topic, explanation) {
-        const response = await fetch("/api/teachback", {
+        const response = await fetch(`${API_BASE_URL}/teachback`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

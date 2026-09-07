@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeachWall Answers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            color: #172554;
+        }
+
+        header {
+            background: #4f46e5;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        header h1 { margin: 0; }
+
+        header a { color: white; }
+
+        main {
+            width: 80%;
+            max-width: 700px;
+            margin: 30px auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 24px;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            margin-top: 16px;
+        }
+
+        input, textarea {
+            box-sizing: border-box;
+            font: inherit;
+            margin-top: 8px;
+            padding: 10px;
+            width: 100%;
+        }
+
+        textarea { min-height: 130px; resize: vertical; }
+
+        button {
+            background: #4f46e5;
+            border: 0;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            margin-top: 18px;
+            padding: 11px 18px;
+        }
+
+        button:disabled { cursor: wait; opacity: 0.7; }
+
+        #answerResult {
+            line-height: 1.6;
+            margin-top: 18px;
+            white-space: pre-wrap;
+        }
+
+        #answersList {
+            margin-top: 24px;
+        }
+
+        .answer-item {
+            border-top: 1px solid #e5e7eb;
+            padding: 16px 0;
+        }
+
+        .answer-item:first-child { border-top: 0; }
+
+        .answer-author {
+            color: #475569;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+
+        .success { color: #166534; }
+        .error { color: #b91c1c; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>TeachWall Answers</h1>
+        <p><a href="/">Back to TeachWall</a></p>
+    </header>
+
+    <main>
+        <section class="card">
+            <h2>Submit an Answer</h2>
+            <form id="answerForm">
+                <label for="postId">Post ID</label>
+                <input id="postId" name="postId" type="number" min="0" required>
+
+                <label for="answer">Your answer</label>
+                <textarea id="answer" name="answer" placeholder="Write your answer..." required></textarea>
+
+                <label for="author">Author</label>
+                <input id="author" name="author" placeholder="Your name" required>
+
+                <button id="submitAnswer" type="submit">Submit Answer</button>
+            </form>
+            <div id="answerResult" aria-live="polite"></div>
+
+            <hr>
+            <h2>Answers for This Post</h2>
+            <button id="loadAnswers" type="button">Load Answers</button>
+            <div id="answersList" aria-live="polite"></div>
+
+            <hr>
+            <h2>Find an Answer</h2>
+            <label for="answerId">Answer ID</label>
+            <input id="answerId" type="number" min="0" required>
+            <button id="loadAnswer" type="button">Load Answer</button>
+            <button id="deleteAnswer" type="button">Delete Answer</button>
+            <div id="singleAnswer" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <script>
+        const API_BASE_URL = "https://thekartik7.runasp.net/api";
+        const answerForm = document.getElementById("answerForm");
+        const submitAnswer = document.getElementById("submitAnswer");
+        const answerResult = document.getElementById("answerResult");
+        const loadAnswers = document.getElementById("loadAnswers");
+        const answersList = document.getElementById("answersList");
+        const loadAnswer = document.getElementById("loadAnswer");
+        const deleteAnswer = document.getElementById("deleteAnswer");
+        const singleAnswer = document.getElementById("singleAnswer");
+
+        function getAnswerId() {
+            const answerId = Number(document.getElementById("answerId").value);
+            if (!Number.isInteger(answerId) || answerId < 0) {
+                throw new Error("Enter a valid answer ID first.");
+            }
+            return answerId;
+        }
+
+        function getPostId() {
+            const postId = Number(document.getElementById("postId").value);
+            if (!Number.isInteger(postId) || postId < 0) {
+                throw new Error("Enter a valid post ID first.");
+            }
+            return postId;
+        }
+
+        function renderAnswers(data) {
+            const answers = Array.isArray(data)
+                ? data
+                : data.answers || data.items || data.data || [];
+
+            answersList.textContent = "";
+            if (!Array.isArray(answers) || answers.length === 0) {
+                answersList.textContent = "No answers found for this post.";
+                return;
+            }
+
+            answers.forEach((item) => {
+                const answerItem = document.createElement("article");
+                answerItem.className = "answer-item";
+
+                const answerText = document.createElement("div");
+                answerText.textContent = item.answer || item.text || "";
+
+                const author = document.createElement("div");
+                author.className = "answer-author";
+                author.textContent = `By ${item.author || "Anonymous"}`;
+
+                answerItem.append(answerText, author);
+                answersList.appendChild(answerItem);
+            });
+        }
+
+        async function loadPostAnswers() {
+            const postId = getPostId();
+            loadAnswers.disabled = true;
+            answersList.textContent = "Loading answers...";
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/answers/post/${postId}`);
+                const responseText = await response.text();
+                let responseBody;
+                try {
+                    responseBody = JSON.parse(responseText);
+                } catch {
+                    responseBody = responseText;
+                }
+
+                if (!response.ok) {
+                    throw new Error(responseBody.message || `Unable to load answers (HTTP ${response.status}).`);
+                }
+
+                renderAnswers(responseBody);
+            } catch (error) {
+                answersList.className = "error";
+                answersList.textContent = error.message;
+            } finally {
+                loadAnswers.disabled = false;
+            }
+        }
+
+        loadAnswers.addEventListener("click", loadPostAnswers);
+
+        loadAnswer.addEventListener("click", async () => {
+            let answerId;
+            try {
+                answerId = getAnswerId();
+            } catch (error) {
+                singleAnswer.className = "error";
+                singleAnswer.textContent = error.message;
+                return;
+            }
+
+            loadAnswer.disabled = true;
+            singleAnswer.className = "";
+            singleAnswer.textContent = "Loading answer...";
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/answers/${answerId}`);
+                const responseText = await response.text();
+                let responseBody;
+                try {
+                    responseBody = JSON.parse(responseText);
+                } catch {
+                    responseBody = responseText;
+                }
+
+                if (!response.ok) {
+                    throw new Error(responseBody.message || `Unable to load the answer (HTTP ${response.status}).`);
+                }
+
+                const answer = responseBody.answer || responseBody;
+                singleAnswer.className = "answer-item";
+                singleAnswer.textContent = `${answer.answer || answer.text || responseText}\nBy ${answer.author || "Anonymous"}`;
+            } catch (error) {
+                singleAnswer.className = "error";
+                singleAnswer.textContent = error.message;
+            } finally {
+                loadAnswer.disabled = false;
+            }
+        });
+
+        deleteAnswer.addEventListener("click", async () => {
+            let answerId;
+            try {
+                answerId = getAnswerId();
+            } catch (error) {
+                singleAnswer.className = "error";
+                singleAnswer.textContent = error.message;
+                return;
+            }
+
+            if (!confirm(`Delete answer ${answerId}?`)) {
+                return;
+            }
+
+            deleteAnswer.disabled = true;
+            singleAnswer.className = "";
+            singleAnswer.textContent = "Deleting answer...";
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/answers/${answerId}`, {
+                    method: "DELETE"
+                });
+                const responseText = await response.text();
+                let responseBody;
+                try {
+                    responseBody = JSON.parse(responseText);
+                } catch {
+                    responseBody = responseText;
+                }
+
+                if (!response.ok) {
+                    throw new Error(responseBody.message || `Unable to delete the answer (HTTP ${response.status}).`);
+                }
+
+                singleAnswer.className = "success";
+                singleAnswer.textContent = "Answer deleted successfully.";
+                await loadPostAnswers();
+            } catch (error) {
+                singleAnswer.className = "error";
+                singleAnswer.textContent = error.message;
+            } finally {
+                deleteAnswer.disabled = false;
+            }
+        });
+
+        answerForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            submitAnswer.disabled = true;
+            answerResult.className = "";
+            answerResult.textContent = "Submitting answer...";
+
+            const payload = {
+                postId: Number(document.getElementById("postId").value),
+                answer: document.getElementById("answer").value.trim(),
+                author: document.getElementById("author").value.trim()
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/answers`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const responseText = await response.text();
+                let responseBody;
+                try {
+                    responseBody = JSON.parse(responseText);
+                } catch {
+                    responseBody = responseText;
+                }
+
+                if (!response.ok) {
+                    throw new Error(responseBody.message || `Unable to submit answer (HTTP ${response.status}).`);
+                }
+
+                answerResult.className = "success";
+                answerResult.textContent = "Answer submitted successfully.";
+                await loadPostAnswers();
+                answerForm.reset();
+            } catch (error) {
+                answerResult.className = "error";
+                answerResult.textContent = error.message;
+            } finally {
+                submitAnswer.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
