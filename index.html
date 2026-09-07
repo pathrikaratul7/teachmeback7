@@ -385,6 +385,53 @@ const scoreResult = document.getElementById("scoreResult");
         return typeof score.score === "number" ? score : null;
     }
 
+    function renderTeachBackResult(score, chatText = "") {
+        const scoreMarkup = score
+            ? (() => {
+                const scoreOutOf10 = typeof score.scoreOutOf10 === "number"
+                    ? score.scoreOutOf10
+                    : score.score / 10;
+                const filledStars = typeof score.starRating === "number"
+                    ? score.starRating
+                    : Math.round(scoreOutOf10 / 2);
+                const stars = "★".repeat(filledStars) + "☆".repeat(5 - filledStars);
+                return `
+                    <div class="score-summary">
+                        <span class="score-value">Score: ${scoreOutOf10}/10</span>
+                        <span class="star-rating" aria-label="Rating: ${filledStars} out of 5 stars">
+                            Rating:
+                            ${stars.slice(0, filledStars)}<span class="empty-star">${stars.slice(filledStars)}</span>
+                        </span>
+                    </div>
+                    <p><strong>${score.level}</strong></p>
+                    <p>${score.feedback}</p>
+                `;
+            })()
+            : "";
+
+        scoreResult.className = "result-panel visible";
+        scoreResult.innerHTML = `
+            <p class="result-label">Teach Me Back</p>
+            <h3>Your result</h3>
+            ${scoreMarkup}
+        `;
+
+        if (chatText) {
+            const resultText = document.createElement("p");
+            resultText.textContent = chatText;
+            scoreResult.appendChild(resultText);
+        }
+    }
+
+    try {
+        const savedResult = JSON.parse(localStorage.getItem("teachMeBackResult"));
+        if (savedResult?.score) {
+            renderTeachBackResult(savedResult.score, savedResult.chatText);
+        }
+    } catch (error) {
+        localStorage.removeItem("teachMeBackResult");
+    }
+
     checkExplanation.addEventListener("click", async function () {
 
     const topic = topicInput.value.trim();
@@ -414,33 +461,10 @@ const scoreResult = document.getElementById("scoreResult");
         }
 
         const score = scoreResponse.status === "fulfilled" ? scoreResponse.value : null;
-        const scoreMarkup = score
-            ? (() => {
-                const filledStars = Math.round(score.score / 20);
-                const stars = "★".repeat(filledStars) + "☆".repeat(5 - filledStars);
-                return `
-                    <div class="score-summary">
-                        <span class="score-value">${score.score}/100</span>
-                        <span class="star-rating" aria-label="${filledStars} out of 5 stars">
-                            ${stars.slice(0, filledStars)}<span class="empty-star">${stars.slice(filledStars)}</span>
-                        </span>
-                    </div>
-                    <p><strong>${score.level}</strong></p>
-                    <p>${score.feedback}</p>
-                `;
-            })()
-            : "";
-
-        scoreResult.className = "result-panel visible";
-        scoreResult.innerHTML = `
-            <p class="result-label">Teach Me Back</p>
-            <h3>Your result</h3>
-            ${scoreMarkup}
-        `;
-        if (chatResponse.status === "fulfilled") {
-            const resultText = document.createElement("p");
-            resultText.textContent = chatResponse.value;
-            scoreResult.appendChild(resultText);
+        const chatText = chatResponse.status === "fulfilled" ? chatResponse.value : "";
+        renderTeachBackResult(score, chatText);
+        if (score) {
+            localStorage.setItem("teachMeBackResult", JSON.stringify({ score, chatText }));
         }
     } catch (error) {
 

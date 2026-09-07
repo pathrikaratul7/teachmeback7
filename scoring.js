@@ -190,6 +190,8 @@ function scoreExplanation(topic, text) {
 
     return {
         score: score,
+        scoreOutOf10: score / 10,
+        starRating: Math.round(score / 20),
         level: level,
         understood: understood,
         missing: missing,

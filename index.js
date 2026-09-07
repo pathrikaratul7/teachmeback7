@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 
-const { scoreExplanation } = require("./scoring.js");
+//const { scoreExplanation } = require("./scoring.js");
 
 const app = express();
 
@@ -49,20 +49,20 @@ app.post("/api/posts", (req, res) => {
 });
 
 // Teach Me Back scoring
-app.post("/api/teachback", (req, res) => {
+// /app.post("/api/teachback", (req, res) => {
 
-    const { topic, text } = req.body;
+//     const { topic, text } = req.body;
 
-    if (!topic || !text) {
-        return res.status(400).json({
-            message: "Topic and explanation are required"
-        });
-    }
+//     if (!topic || !text) {
+//         return res.status(400).json({
+//             message: "Topic and explanation are required"
+//         });
+//     }
 
-    const result = scoreExplanation(topic, text);
+//     const result = scoreExplanation(topic, text);
 
-    res.json(result);
-});
+//     res.json(result);
+// });
 
 // Proxy explanation checks through the backend to avoid browser CORS errors.
 app.post("/api/chat", async (req, res) => {
@@ -82,7 +82,7 @@ app.post("/api/chat", async (req, res) => {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                message: `${message}\nValidate this Answer.`
+                message: `${message}\nvalidate this answer and also give scoring out of 10 and rating out of 5`
             })
         });
 
@@ -96,9 +96,17 @@ app.post("/api/chat", async (req, res) => {
 
 
     
-// Start server
-const PORT = process.env.PORT || 5000;
+// // Start server
+// const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+// app.listen(PORT, () => {
+//     console.log(`Server running on port ${PORT}`);
+// });
+
+// Start server // MonsterASP provides the PORT through web.config
+ const PORT = process.env.PORT || 5000;
+  app.listen(PORT, "0.0.0.0", () =>
+     { 
+        console.log(`TeachWall Backend is running on port ${PORT}`);
+    
+    });
