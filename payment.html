@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Get Tokens | TeachWall</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="payment-page">
+    <header class="site-header" data-site-header></header>
+    <main>
+        <section class="payment-hero">
+            <div class="eyebrow">Power your learning</div>
+            <h1>More questions.<br><em>More clarity.</em></h1>
+            <p>Choose a token pack, scan the QR code, and unlock more opportunities to ask, answer, and teach back.</p>
+            <div class="payment-trust"><span>UPI accepted</span><span>Instant admin confirmation</span><span>Secure checkout</span></div>
+        </section>
+
+        <section class="payment-layout">
+            <div class="payment-card package-card">
+                <div class="card-kicker">Choose your pack</div>
+                <h2>Invest in understanding.</h2>
+                <div class="package-list" role="radiogroup" aria-label="Token packages">
+                    <button class="package selected" type="button" data-tokens="5000" data-amount="99" aria-pressed="true"><span><strong>Starter</strong><small>For a quick learning sprint</small></span><b>5,000</b><i>₹99</i></button>
+                    <button class="package" type="button" data-tokens="15000" data-amount="249" aria-pressed="false"><span><strong>Builder</strong><small>For a steady week of practice</small></span><b>15,000</b><i>₹249</i></button>
+                    <button class="package" type="button" data-tokens="25000" data-amount="399" aria-pressed="false"><span><strong>Deep dive</strong><small>Best value for consistent learners</small></span><b>25,000</b><i>₹399</i></button>
+                </div>
+                <div class="payment-summary"><span>Selected pack</span><strong id="selectedSummary">5,000 tokens · ₹99</strong></div>
+                <a class="button payment-continue" href="auth.html">Create account or log in</a>
+                <p class="payment-note">Already paid? Log in and share your payment reference with the administrator for token activation.</p>
+            </div>
+
+            <div class="payment-card qr-card">
+                <div class="qr-heading"><div><div class="card-kicker">Scan to pay</div><h2>Pay with any UPI app</h2></div><span class="upi-badge">UPI</span></div>
+                <div class="qr-options">
+                    <div class="qr-option"><span>Selected pack</span><div class="qr-frame"><img id="paymentQr" alt="QR code for the selected token package"></div></div>
+                    <div class="qr-option"><span>Any amount</span><div class="qr-frame"><img id="anyAmountQr" alt="QR code for any UPI payment"></div></div>
+                </div>
+                <div class="upi-details"><span>Paying to</span><strong>Atul Pathrikar</strong><code id="upiId">pathrikaratul7@ybl</code><button id="copyUpi" class="copy-upi" type="button">Copy UPI ID</button></div>
+                <a id="payNow" class="button payment-continue" href="#">Pay selected pack in UPI app</a>
+                <div class="qr-instruction"><span class="instruction-number">1</span><p>Scan the QR code in Google Pay, PhonePe, Paytm, or your preferred UPI app.</p><span class="instruction-number">2</span><p>Complete payment for the selected amount, then log in to request activation.</p></div>
+            </div>
+        </section>
+
+        <section class="payment-footer-note"><strong>How tokens work</strong><span>Tokens are used when you create posts, submit answers, and request Teach Me Back scoring. Your balance and history are always visible in Profile.</span><a href="profile.html">View your balance</a></section>
+    </main>
+    <script src="app.js"></script>
+    <script>
+        renderHeader();
+        const upiId = "pathrikaratul7@ybl";
+        const payeeName = "Atul Pathrikar";
+        const qr = document.getElementById("paymentQr");
+        const anyAmountQr = document.getElementById("anyAmountQr");
+        const payNow = document.getElementById("payNow");
+        const summary = document.getElementById("selectedSummary");
+        const packages = document.querySelectorAll(".package");
+
+        function createUpiUrl(amount = "") {
+            const params = new URLSearchParams({ pa: upiId, pn: payeeName, tn: "TeachWall token purchase", cu: "INR" });
+            if (amount) {
+                params.set("am", amount);
+                params.set("tr", `TW${Date.now()}`);
+            }
+            return `upi://pay?${params.toString()}`;
+        }
+
+        function qrUrl(upiUrl) {
+            return `https://api.qrserver.com/v1/create-qr-code/?size=360x360&margin=12&data=${encodeURIComponent(upiUrl)}`;
+        }
+
+        function updatePaymentChoice(button) {
+            packages.forEach(item => {
+                const selected = item === button;
+                item.classList.toggle("selected", selected);
+                item.setAttribute("aria-pressed", String(selected));
+            });
+            const amount = button.dataset.amount;
+            const tokens = Number(button.dataset.tokens).toLocaleString("en-IN");
+            summary.textContent = `${tokens} tokens · ₹${amount}`;
+            const selectedUpiUrl = createUpiUrl(amount);
+            qr.src = qrUrl(selectedUpiUrl);
+            payNow.href = selectedUpiUrl;
+        }
+
+        packages.forEach(button => button.addEventListener("click", () => updatePaymentChoice(button)));
+        anyAmountQr.src = qrUrl(createUpiUrl());
+        document.getElementById("copyUpi").addEventListener("click", async () => {
+            try {
+                await navigator.clipboard.writeText(upiId);
+                document.getElementById("copyUpi").textContent = "Copied";
+                window.setTimeout(() => { document.getElementById("copyUpi").textContent = "Copy UPI ID"; }, 1800);
+            } catch {
+                document.getElementById("copyUpi").textContent = "Select the UPI ID above";
+            }
+        });
+        updatePaymentChoice(document.querySelector(".package.selected"));
+    </script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin | TeachWall</title><link rel="stylesheet" href="styles.css"></head>
+<body><header class="site-header" data-site-header></header><main><section class="intro"><div class="eyebrow">Administration</div><h1>Manage members.</h1><p>Update token balances, reset expired balances, or change a member's role.</p></section><section class="panel"><div class="actions"><h2 style="margin:0 auto 0 0">Users</h2><button id="reload" class="secondary" type="button">Refresh</button></div><div id="adminMessage" class="message" role="status"></div><div class="table-wrap"><table><thead><tr><th>User</th><th>Role</th><th>Remaining</th><th>Actions</th></tr></thead><tbody id="users"></tbody></table></div></section></main><script src="app.js"></script><script>
+renderHeader('admin');
+if (!requireAuth()) throw new Error('Authentication required');
+
+const users = document.getElementById('users');
+const message = document.getElementById('adminMessage');
+
+function roleActionLabel(role) {
+    return role === 'User' ? 'Make Admin Or SuperAdmin' : 'Make user';
+}
+
+function roleActionValue(role) {
+    if (role !== 'User') return '0';
+    const requestedRole = prompt('Enter the new role: Admin or SuperAdmin', 'Admin');
+    if (!requestedRole) return null;
+    const normalizedRole = requestedRole.trim().toLowerCase();
+    if (normalizedRole === 'admin') return '1';
+    if (normalizedRole === 'superadmin') return '2';
+    showMessage(message, 'Role must be Admin or SuperAdmin.', 'error');
+    return null;
+}
+
+async function loadUsers() {
+    try {
+        const data = await apiFetch('/admin/users');
+        users.innerHTML = data.map(user => `
+            <tr>
+                <td>${user.username}<br><span class="muted">${user.email}</span></td>
+                <td>${user.role}</td>
+                <td>${user.remainingTokens}</td>
+                <td><div class="actions">
+                    <button type="button" data-add="${user.id}">Add tokens</button>
+                    <button type="button" class="secondary" data-reset="${user.id}">Reset</button>
+                    <button type="button" class="secondary" data-role="${user.id}" data-current-role="${user.role}">${roleActionLabel(user.role)}</button>
+                </div></td>
+            </tr>`).join('');
+    } catch (error) {
+        showMessage(message, error.message, 'error');
+    }
+}
+
+users.addEventListener('click', async event => {
+    const button = event.target.closest('button');
+    if (!button) return;
+
+    const userId = Number(button.dataset.add || button.dataset.reset || button.dataset.role);
+    button.disabled = true;
+
+    try {
+        if (button.dataset.add) {
+            const amount = prompt('Tokens to add:', '25000');
+            if (!amount) return;
+            const tokenAmount = Number(amount);
+            if (!Number.isInteger(tokenAmount) || tokenAmount <= 0) {
+                throw new Error('Enter a positive whole number of tokens.');
+            }
+            await apiFetch(`/admin/users/${userId}/tokens`, {
+                method: 'PUT',
+                body: JSON.stringify({ userId, availableTokens: tokenAmount, reason: 'Amount Paid' })
+            });
+            showMessage(message, 'Tokens updated successfully.', 'success');
+        } else if (button.dataset.reset) {
+            if (!confirm('Reset this user tokens?')) return;
+            await apiFetch(`/admin/users/${userId}/reset-tokens`, {
+                method: 'POST',
+                body: JSON.stringify({ userId, reason: 'Token Expired' })
+            });
+            showMessage(message, 'Tokens reset successfully.', 'success');
+        } else if (button.dataset.role) {
+            const role = roleActionValue(button.dataset.currentRole);
+            if (role === null) return;
+            await apiFetch(`/admin/users/${userId}/assign-role`, {
+                method: 'POST',
+                body: JSON.stringify({ userId, role })
+            });
+            showMessage(message, 'Role updated successfully.', 'success');
+        }
+        await loadUsers();
+    } catch (error) {
+        showMessage(message, error.message, 'error');
+    } finally {
+        button.disabled = false;
+    }
+});
+
+document.getElementById('reload').addEventListener('click', loadUsers);
+loadUsers();
+</script></body></html>
