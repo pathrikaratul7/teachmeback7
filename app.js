@@ -77,7 +77,33 @@ function requireAuth() {
         window.location.href = "auth.html";
         return false;
     }
+    enforceAccountAccess();
     return true;
+}
+
+let accountAccessCheck;
+let accountAccessRedirecting = false;
+
+function enforceAccountAccess() {
+    if (accountAccessCheck) return accountAccessCheck;
+
+    accountAccessCheck = Promise.all([
+        apiFetch("/users/profile"),
+        apiFetch("/users/subscription-status")
+    ]).then(([profile, subscription]) => {
+        const hasTokens = Number(profile?.remainingTokens) > 0;
+        const hasActiveSubscription = subscription?.isSubscriptionActive === true;
+        if (hasTokens && hasActiveSubscription) return true;
+
+        if (!accountAccessRedirecting) {
+            accountAccessRedirecting = true;
+            showToast("Account subscription is inactive.", "error");
+            window.setTimeout(() => { window.location.href = "payment.html"; }, 1500);
+        }
+        return false;
+    }).catch(() => true);
+
+    return accountAccessCheck;
 }
 
 function renderHeader(activePage) {
