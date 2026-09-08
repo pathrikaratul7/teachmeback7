@@ -233,11 +233,11 @@ app.delete("/api/answers/:answerId", async (req, res) => {
 
 // Proxy Teach Me Back scoring through the backend to avoid browser CORS errors.
 app.post("/api/teachback", async (req, res) => {
-    const { topic, text } = req.body || {};
+    const { userId, topic, text } = req.body || {};
 
-    if (typeof topic !== "string" || !topic.trim() || typeof text !== "string" || !text.trim()) {
+    if (!Number.isInteger(Number(userId)) || Number(userId) <= 0 || typeof topic !== "string" || !topic.trim() || typeof text !== "string" || !text.trim()) {
         return res.status(400).json({
-            message: "Topic and explanation are required"
+            message: "userId, topic, and explanation are required"
         });
     }
 
@@ -249,6 +249,7 @@ app.post("/api/teachback", async (req, res) => {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
+                userId: Number(userId),
                 topic: topic.trim(),
                 text: text.trim()
             })
